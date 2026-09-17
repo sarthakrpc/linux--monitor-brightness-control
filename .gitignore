@@ -1,13 +1,23 @@
-# Compiled binary
-/brightness-control
-*.o
-
-# Packaging output (make deb)
+# Build output: the binary, the .deb and its staging tree. All of it is
+# reproducible with `make deb`.
 /build/
+
+# A package copied somewhere else in the tree. Release files belong in a
+# release, not in history.
 *.deb
 
-# Editor / OS noise
-*~
-*.swp
+# C: object files, and a binary built by hand outside build/.
+*.o
+/brightness-control
+
+# Editors and the OS.
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.directory
+
+# Per-machine assistant settings.
+.claude/settings.local.json

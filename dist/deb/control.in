@@ -1,0 +1,15 @@
+Package: brightness-control
+Version: @VERSION@
+Architecture: amd64
+Maintainer: Sarthak <sarthakkumar766@gmail.com>
+Installed-Size: @INSTALLED_SIZE@
+Depends: libc6, libgtk-3-0t64 | libgtk-3-0, libxapp1, ddcutil
+Section: utils
+Priority: optional
+Description: Brightness slider for an external monitor, in the panel
+ Laptop brightness keys do not reach a monitor plugged in over HDMI or
+ DisplayPort. This adds a sun icon to the panel: click it for a brightness
+ slider, or scroll on it to go up and down in steps.
+ .
+ The monitor is controlled over DDC/CI using ddcutil. The icon appears as soon
+ as the package is installed and starts by itself at every login.

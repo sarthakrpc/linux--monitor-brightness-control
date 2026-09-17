@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Monitor Brightness (panel icon)
+Comment=Brightness slider for an external monitor, in the panel
+Exec=/usr/bin/brightness-control
+Icon=display-brightness-symbolic
+Terminal=false
+X-GNOME-Autostart-enabled=true

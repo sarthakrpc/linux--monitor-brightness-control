@@ -1,7 +1,12 @@
 /* Tray slider for external monitor brightness over DDC/CI (via ddcutil). */
 #include <gtk/gtk.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef VERSION
+#define VERSION "dev"
+#endif
 
 #define MARGIN 8
 #define SLIDER_WIDTH 168
@@ -238,12 +243,40 @@ static gboolean on_grab_broken(GtkWidget *w, GdkEvent *e, gpointer data) {
 	return FALSE;
 }
 
+/* The popup has no window-manager focus, so GTK never hands keys to the
+ * slider itself; they arrive here through the keyboard grab. */
 static gboolean on_key(GtkWidget *w, GdkEventKey *e, gpointer data) {
-	if (e->keyval == GDK_KEY_Escape) {
+	double v = gtk_range_get_value(GTK_RANGE(scale));
+
+	switch (e->keyval) {
+	case GDK_KEY_Escape:
 		hide_popup();
 		return TRUE;
+	case GDK_KEY_Right: case GDK_KEY_Up: case GDK_KEY_KP_Right: case GDK_KEY_KP_Up:
+	case GDK_KEY_plus: case GDK_KEY_KP_Add:
+		v += 5;
+		break;
+	case GDK_KEY_Left: case GDK_KEY_Down: case GDK_KEY_KP_Left: case GDK_KEY_KP_Down:
+	case GDK_KEY_minus: case GDK_KEY_KP_Subtract:
+		v -= 5;
+		break;
+	case GDK_KEY_Page_Up:
+		v += 10;
+		break;
+	case GDK_KEY_Page_Down:
+		v -= 10;
+		break;
+	case GDK_KEY_Home:
+		v = 0;
+		break;
+	case GDK_KEY_End:
+		v = 100;
+		break;
+	default:
+		return FALSE;
 	}
-	return FALSE;
+	gtk_range_set_value(GTK_RANGE(scale), v);
+	return TRUE;
 }
 
 static void on_icon_release(XAppStatusIcon *i, int x, int y, guint button, guint time, int panel, gpointer data) {
@@ -331,6 +364,12 @@ static void on_activate(GApplication *app, gpointer data) {
 }
 
 int main(int argc, char **argv) {
+	/* The package version is read back from here by dist/build-deb.sh. */
+	if (argc > 1 && (!strcmp(argv[1], "-V") || !strcmp(argv[1], "--version"))) {
+		puts("brightness-control " VERSION);
+		return 0;
+	}
+
 	GtkApplication *app = gtk_application_new("com.qxlabs.BrightnessControl", G_APPLICATION_FLAGS_NONE);
 	g_signal_connect(app, "startup", G_CALLBACK(on_startup), NULL);
 	g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);

@@ -1,0 +1,47 @@
+#!/bin/sh
+set -e
+
+# $DPKG_ROOT is only set when dpkg is installing into an alternate root
+# without chroot. Anything that talks to the running system is skipped then.
+R="${DPKG_ROOT:-}"
+
+live() {
+    [ -z "$R" ] && [ -d /run/systemd/system ]
+}
+
+# start_icons puts the panel icon up straight away for whoever is logged in to
+# a desktop, so installing does not need a log-out to take effect. From then
+# on the autostart entry does it at each login. Strictly best effort.
+start_icons() {
+    command -v loginctl >/dev/null 2>&1 || return 0
+    command -v runuser >/dev/null 2>&1 || return 0
+    loginctl list-sessions --no-legend 2>/dev/null | while read -r sid rest; do
+        [ "$(loginctl show-session "$sid" -p Remote --value 2>/dev/null)" = no ] || continue
+        case "$(loginctl show-session "$sid" -p Type --value 2>/dev/null)" in
+        x11|wayland) ;;
+        *) continue ;;
+        esac
+        user="$(loginctl show-session "$sid" -p Name --value 2>/dev/null)"
+        [ -n "$user" ] && [ "$user" != root ] || continue
+        uid="$(id -u "$user" 2>/dev/null)" || continue
+        [ -S "/run/user/$uid/bus" ] || continue
+        # As a transient unit of that user's own systemd, so it is theirs in
+        # every respect and is not tied to this script. DISPLAY and XAUTHORITY
+        # come from that systemd's environment, which the desktop session
+        # fills in at login.
+        runuser -u "$user" -- env \
+            XDG_RUNTIME_DIR="/run/user/$uid" \
+            DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$uid/bus" \
+            systemd-run --user --quiet --collect /usr/bin/brightness-control >/dev/null 2>&1 || true
+    done
+}
+
+case "$1" in
+configure)
+    if live; then
+        start_icons
+    fi
+    ;;
+esac
+
+exit 0

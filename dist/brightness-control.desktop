@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Monitor Brightness
+GenericName=External Monitor Brightness
+Comment=Brightness slider for an external monitor, in the panel
+Exec=/usr/bin/brightness-control
+Icon=display-brightness-symbolic
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=brightness;monitor;display;screen;backlight;ddc;ddcutil;dim;external;hdmi;
+StartupNotify=false

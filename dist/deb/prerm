@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+R="${DPKG_ROOT:-}"
+
+# The icon would otherwise keep running the old program, or one that is about
+# to be deleted. After an upgrade the new postinst brings it back.
+# (The name is cut short on purpose: process names hold 15 characters.)
+if [ -z "$R" ]; then
+    pkill -x brightness-cont 2>/dev/null || true
+fi
+
+exit 0

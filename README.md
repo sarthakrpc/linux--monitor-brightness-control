@@ -1,156 +1,134 @@
 # Brightness Control
 
-A tiny tray slider for **external monitor brightness** on Linux Mint / Cinnamon.
-Laptop brightness keys don't reach an HDMI/DisplayPort monitor; this talks to it
-over DDC/CI (via `ddcutil`) instead.
+A brightness slider for your **external monitor**, in the panel on Linux.
 
-- Click the sun icon in the panel → a small slider pops up above it, drag to set brightness.
-- Scroll on the icon → ±5% without opening anything.
-- Right-click → Quit.
-- Click anywhere else or press `Esc` to close. The popup never steals focus from your active window.
-- Launching it again while it's running just toggles the slider, so you can bind the command to a keyboard shortcut.
+![The brightness slider that opens when you click the sun icon](docs/popup.png)
 
-Single C file, GTK 3, ~28 KB binary.
+The brightness keys on a laptop only change the laptop's own screen. A monitor
+plugged in over HDMI or DisplayPort ignores them, and you end up pressing the
+little buttons under the monitor. This app puts a slider in your panel instead.
 
-## Tested on
+Tested on **Linux Mint 22.3 (Cinnamon)** with an Acer SA322QU over HDMI. It has
+not been tried on other systems.
 
-Linux Mint 22.3 (Cinnamon, X11) with GTK 3.24, `ddcutil` 1.4.1 and `libxapp1` 3.2,
-driving an Acer SA322QU over HDMI. That is the only setup it has been tested on.
-Other Ubuntu/Debian based desktops with GTK 3 should work but are untried, and the
-popup positioning relies on X11 so Wayland sessions are not expected to work properly.
+## What you get
 
-## Requirements
+- **A sun icon in the panel.** Click it and drag the slider.
+- **Scroll on the icon** to go up or down 5% at a time, without opening anything.
+- **It stays out of your way.** The window you were working in stays active
+  while the slider is open. Click anywhere else, or press `Esc`, to close it.
+- **It starts by itself** whenever you log in.
+- **No passwords.** You type your password once, to install. Never again.
 
-Runtime:
+## Install
 
-| Package | Why |
-| --- | --- |
-| `ddcutil` | sends the brightness commands to the monitor |
-| `libgtk-3-0` | UI |
-| `libxapp1` | panel icon (preinstalled on Mint) |
+1. Download **`brightness-control_1.2_amd64.deb`** from the [Releases page](https://github.com/sarthakrpc/linux--monitor-brightness-control/releases/latest).
+2. Double-click it and press **Install Package**.
+3. Type your password when asked.
 
-Build:
+That's it. The sun icon appears in the panel straight away, and from now on it
+starts by itself whenever you log in. **Monitor Brightness** is also in your
+applications menu.
+
+There is nothing else to install first. The one tool it relies on, `ddcutil`,
+comes from Mint's own software sources, and the installer fetches it for you
+during step 2 (so you need to be online).
+
+Don't have the installer file? See [Build the installer yourself](#build-the-installer-yourself).
+
+## Using it
+
+| Do this | And this happens |
+|---|---|
+| **Click** the sun icon | The slider opens just above it. Drag it, or use the arrow keys. |
+| **Scroll** on the sun icon | Brightness goes up or down by 5%. |
+| **Hover** over the sun icon | It tells you the current brightness. |
+| **Click anywhere else**, or press `Esc` | The slider closes. |
+| **Right-click** the sun icon | A menu with *Quit*. |
+
+Choosing *Quit* only removes the icon. Your monitor keeps the brightness you
+set, and the icon returns the next time you log in or open Monitor Brightness
+from the menu.
+
+### A keyboard shortcut, if you like
+
+Open **System Settings → Keyboard → Shortcuts → Custom Shortcuts**, add one,
+and give it this command:
 
 ```bash
-sudo apt install build-essential pkg-config libgtk-3-dev ddcutil
+brightness-control
 ```
 
-`libxapp-dev` is **not** needed — the Makefile links straight against `libxapp.so.1`.
+Pressing your shortcut then opens the slider in the bottom-right corner, and
+pressing it again closes it.
 
-### Check that your monitor supports DDC/CI first
+## If something isn't right
 
-```bash
-ddcutil detect
-```
+**The sun icon is missing.** Open Monitor Brightness from the menu once; that
+brings it back. If it never appears at login, open Mint's *Startup
+Applications* and make sure *Monitor Brightness (panel icon)* is switched on.
+If it is still missing, right-click the panel, choose *Applets*, and check that
+*XApp Status Applet* is there. Mint has it by default.
+
+**The slider moves but the monitor doesn't change.** Your monitor has to allow
+being controlled from the computer. This shows whether it does:
 
 ```bash
 ddcutil getvcp 10
 ```
 
-The first should list your monitor as `Display 1`, the second should print its
-current brightness. If either fails, the app can't work either — enable "DDC/CI"
-in the monitor's on-screen menu, and if you get permission errors add yourself
-to the `i2c` group and log out and back in:
+If that prints a brightness value, the app will work. If it says no monitor was
+found, look in the monitor's own menu (the buttons on the monitor) for a
+setting called **DDC/CI** and switch it on. If it complains about permissions,
+restart the computer once: access to the monitor is set up by `ddcutil` when it
+is installed, and takes effect at the next start. If it still complains, run
+this, then log out and back in:
 
 ```bash
 sudo usermod -aG i2c $USER
 ```
 
-## Build and run
+**The brightness follows the slider a moment late.** That's the monitor, not
+the app: monitors take about a third of a second to answer. It always ends up
+exactly where you let go.
 
-```bash
-make
-```
+**The slider shows the wrong number.** The app reads the brightness once, when
+it starts. If you change it with the buttons on the monitor, the slider doesn't
+know until you move it or log in again.
 
-```bash
-./brightness-control
-```
+**I have two external monitors.** It controls the first one it finds.
 
-The sun icon appears in the panel's status area. No terminal output means it's working.
-
-## Install
-
-### Option A: .deb package (recommended)
-
-Installs to `/usr/bin`, adds a "Monitor Brightness" menu entry, and autostarts on
-login for every user. After this the source folder isn't needed any more.
-
-```bash
-make deb
-```
-
-```bash
-sudo apt install ./brightness-control_1.1.0_amd64.deb
-```
-
-Remove it with:
+## Uninstall
 
 ```bash
 sudo apt remove brightness-control
 ```
 
-### Option B: per-user, no root
+The icon disappears and nothing else is left behind. Your monitor keeps
+whatever brightness it had.
 
-Installs to `~/.local/bin`, with the menu entry in `~/.local/share/applications`
-and autostart in `~/.config/autostart`.
+## Build the installer yourself
 
-```bash
-make install
-```
+You need a C compiler and the GTK headers:
 
 ```bash
-make uninstall
+sudo apt install build-essential pkg-config libgtk-3-dev ddcutil
 ```
 
-Use one option or the other, not both — otherwise two autostart entries exist
-(harmless, the second launch just toggles the slider open at login, but annoying).
-
-### After installing or upgrading
-
-The copy that's already running keeps running the old code. Restart it once
-(later logins pick up the new version by themselves):
+Then, in this folder:
 
 ```bash
-pkill -x brightness-cont; setsid brightness-control >/dev/null 2>&1 &
+make deb
 ```
 
-(`brightness-cont` is not a typo — process names are cut to 15 characters.)
+It takes a second. The installer appears at
+`build/brightness-control_1.2_amd64.deb`. Keep a copy of it somewhere safe: it
+contains everything, so you can reinstall later without this folder.
 
-## Keyboard shortcut
+To try it without installing, use `make run`.
 
-System Settings → Keyboard → Shortcuts → Custom Shortcuts → add one with the
-command `brightness-control`. Since the app is single-instance, the shortcut
-toggles the slider in the bottom-right corner.
+## More detail
 
-## Releasing a new version
-
-1. Bump `VERSION` in the `Makefile`.
-2. `make deb`
-3. `sudo apt install ./brightness-control_<version>_amd64.deb`
-
-## Troubleshooting
-
-**No icon in the panel.** Check that it's running: `pgrep -x brightness-cont`.
-If it is, make sure the panel has the *XApp Status Applet* (right-click panel →
-Applets). Mint's panel does not display old-style tray icons, which is why this
-uses `libxapp`; on desktops without an XApp applet it falls back to a regular
-tray icon automatically.
-
-**Slider moves but the brightness doesn't change.** Run the `ddcutil` checks
-above. Run `./brightness-control` from a terminal to see `ddcutil` errors.
-
-**Slider feels laggy.** Each DDC/CI write takes ~0.3 s on the monitor's side.
-While dragging, only the most recent position is sent, so it lands on the right
-value as soon as you stop.
-
-**Multiple monitors.** It controls the first DDC-capable display that
-`ddcutil detect` reports.
-
-## Files
-
-| File | What |
-| --- | --- |
-| `main.c` | the whole app: tray icon, popup, `ddcutil` worker thread |
-| `Makefile` | `make`, `make install` / `uninstall`, `make deb`, `make clean` |
-| `brightness-control.desktop.in` | template for the menu + autostart entry |
-| `debian-control.in` | template for the package metadata |
+- [docs/TECHNICAL.md](docs/TECHNICAL.md) explains how it works inside: how it
+  talks to the monitor, why the icon is built the way it is, what the package
+  does when it installs, and how to work on the code.
