@@ -39,6 +39,11 @@ start_icons() {
 case "$1" in
 configure)
     if live; then
+        # Whatever is running now is not this version: a copy built from
+        # source, or one from a package too old to have a prerm. Only one copy
+        # runs at a time, so left alone it would swallow the start below and
+        # just open its slider. (Process names hold 15 characters.)
+        pkill -x brightness-cont 2>/dev/null || true
         start_icons
     fi
     ;;
