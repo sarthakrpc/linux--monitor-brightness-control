@@ -1,0 +1,13 @@
+# Compiled binary
+/brightness-control
+*.o
+
+# Packaging output (make deb)
+/build/
+*.deb
+
+# Editor / OS noise
+*~
+*.swp
+.vscode/
+.idea/
